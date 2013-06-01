@@ -40,6 +40,12 @@ public class MiscConfiguration {
 
     @Mod.PostInit
     public void postInit(FMLPostInitializationEvent event) {
+    }
+
+    /**
+     * Scan item names for lookup
+     */
+    private void scanItemNames() {
         // TODO: might have to run at first tick, if this is not late enough for all other mods to be loaded
 
         FMLLog.log(Level.INFO, "Scanning items");
@@ -47,7 +53,7 @@ public class MiscConfiguration {
             Item item = Item.itemsList[id];
             if (item == null) continue;
 
-            int damage = 0;
+            int damage = 0; // TODO: scan damages?
             ItemStack itemStack = new ItemStack(id, 1, damage);
             try {
                 System.out.println("id "+id+" is "+itemStack.getItemName());
@@ -55,6 +61,7 @@ public class MiscConfiguration {
                 ;
             }
         }
+        // TODO: cache in itemNames
     }
 
     private ItemStack itemStackByName(String name) {
