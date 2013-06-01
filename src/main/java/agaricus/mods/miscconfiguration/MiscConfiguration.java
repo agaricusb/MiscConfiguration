@@ -8,18 +8,20 @@ import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.registry.GameRegistry;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraft.item.crafting.IRecipe;
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.oredict.OreDictionary;
+import net.minecraftforge.oredict.ShapedOreRecipe;
+import net.minecraftforge.oredict.ShapelessOreRecipe;
 
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Level;
 
 @Mod(modid = "MiscConfiguration", name = "MiscConfiguration", version = "1.0-SNAPSHOT") // TODO: version from resource
 @NetworkMod(clientSideRequired = false, serverSideRequired = false)
 public class MiscConfiguration {
 
+    private List<IRecipe> recipes = new ArrayList<IRecipe>();
     private Map<String, ItemStack> itemNames = new HashMap<String, ItemStack>();
 
     @Mod.PreInit
@@ -35,11 +37,17 @@ public class MiscConfiguration {
             cfg.save();
         }
 
+        ItemStack output = new ItemStack(12345, 1, 0);
+        recipes.add(new ShapelessOreRecipe(output, "ingotCopper")); // TODO: read from config
+
         FMLLog.log(Level.INFO, "MiscConfiguration enabled");
     }
 
     @Mod.PostInit
     public void postInit(FMLPostInitializationEvent event) {
+        for (IRecipe recipe : recipes) {
+            GameRegistry.addRecipe(recipe);
+        }
     }
 
     /**
