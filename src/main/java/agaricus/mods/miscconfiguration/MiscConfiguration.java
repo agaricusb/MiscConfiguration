@@ -1,6 +1,7 @@
 package agaricus.mods.miscconfiguration;
 
 import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.IFuelHandler;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
@@ -19,8 +20,10 @@ import java.util.logging.Level;
 
 @Mod(modid = "MiscConfiguration", name = "MiscConfiguration", version = "1.0-SNAPSHOT") // TODO: version from resource
 @NetworkMod(clientSideRequired = false, serverSideRequired = false)
-public class MiscConfiguration {
+public class MiscConfiguration implements IFuelHandler {
 
+    private Map<Integer, Integer> fuelTimes = new HashMap<Integer, Integer>();
+    //private List<ItemStack, Integer> fuelTimes = new ArrayList<ItemStack, Integer>(); // TODO: metadata, NBT
     private List<IRecipe> recipes = new ArrayList<IRecipe>();
     private Map<String, ItemStack> itemNames = new HashMap<String, ItemStack>();
 
@@ -37,8 +40,14 @@ public class MiscConfiguration {
             cfg.save();
         }
 
-        ItemStack output = new ItemStack(12345, 1, 0);
-        recipes.add(new ShapelessOreRecipe(output, "ingotCopper")); // TODO: read from config
+        GameRegistry.registerFuelHandler(this);
+
+        // TODO
+        fuelTimes.put(2631,  // Herringbone Parquet Plank
+                GameRegistry.getFuelValue(new ItemStack(Item.coal.itemID, 1, 0)));
+
+        //ItemStack output = new ItemStack(12345, 1, 0);
+        //recipes.add(new ShapelessOreRecipe(output, "ingotCopper")); // TODO: read from config
 
         FMLLog.log(Level.INFO, "MiscConfiguration enabled");
     }
@@ -48,6 +57,13 @@ public class MiscConfiguration {
         for (IRecipe recipe : recipes) {
             GameRegistry.addRecipe(recipe);
         }
+    }
+
+    @Override
+    public int getBurnTime(ItemStack fuel) {
+        if (!fuelTimes.containsKey(fuel.itemID)) return 0; // TODO: matching
+
+        return fuelTimes.get(fuel.itemID);
     }
 
     /**
