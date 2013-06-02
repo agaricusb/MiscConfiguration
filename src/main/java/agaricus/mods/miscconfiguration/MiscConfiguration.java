@@ -29,7 +29,7 @@ public class MiscConfiguration implements IFuelHandler {
     private Map<ConfigItemStack, Integer> fuelTimes = new HashMap<ConfigItemStack, Integer>();
     private List<IRecipe> recipes = new ArrayList<IRecipe>();
     private Map<Integer, Integer> maxStackSizes = new HashMap<Integer, Integer>();
-
+    private Map<Integer, Float> blastResistances = new HashMap<Integer, Float>();
 
     @Mod.PreInit
     public void preInit(FMLPreInitializationEvent event) {
@@ -84,6 +84,19 @@ public class MiscConfiguration implements IFuelHandler {
 
                 maxStackSizes.put(item.getItemStack().itemID, property.getInt());
             }
+
+            for (Map.Entry<String, Property> entry : cfg.getCategory("BlastResistances").entrySet()) {
+                String key = entry.getKey();
+                Property property = entry.getValue();
+
+                ConfigItemStack item = new ConfigItemStack(key);
+                if (!item.isValid()) {
+                    FMLLog.log(Level.WARNING, "MiscConfiguration ignoring unrecognized item name '"+key+"'");
+                    continue;
+                }
+
+                blastResistances.put(item.getItemStack().itemID, (float) property.getDouble(0)); // TODO: configurable from item name (obsidian..)
+            }
         } catch (Exception e) {
             FMLLog.log(Level.SEVERE, e, "MiscConfiguration had a problem loading it's configuration");
         } finally {
@@ -115,6 +128,19 @@ public class MiscConfiguration implements IFuelHandler {
             }
 
             item.setMaxStackSize(maxStackSize);
+        }
+
+        for (Map.Entry<Integer, Float> entry : blastResistances.entrySet()) {
+            int blockID = entry.getKey();
+            float resistance = entry.getValue();
+
+            Block block = Block.blocksList[blockID];
+            if (block == null) {
+                FMLLog.log(Level.WARNING, "MiscConfiguration ignoring non-existent block '"+blockID+"'");
+                continue;
+            }
+
+            block.blockResistance = resistance;
         }
     }
 
