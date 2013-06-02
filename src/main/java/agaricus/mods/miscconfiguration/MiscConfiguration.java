@@ -7,9 +7,11 @@ import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkMod;
 import cpw.mods.fml.common.registry.GameRegistry;
+import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
+import net.minecraft.tileentity.TileEntityFurnace;
 import net.minecraftforge.common.Configuration;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.ShapedOreRecipe;
@@ -42,9 +44,10 @@ public class MiscConfiguration implements IFuelHandler {
 
         GameRegistry.registerFuelHandler(this);
 
+        fuelTimes.put(Block.cobblestone.blockID, TileEntityFurnace.getItemBurnTime(new ItemStack(Item.coal)));
         // TODO
-        fuelTimes.put(2631,  // Herringbone Parquet Plank
-                GameRegistry.getFuelValue(new ItemStack(Item.coal.itemID, 1, 0)));
+        //fuelTimes.put(2631,  // Herringbone Parquet Plank
+        //        GameRegistry.getFuelValue(new ItemStack(Item.coal.itemID, 1, 0)));
 
         //ItemStack output = new ItemStack(12345, 1, 0);
         //recipes.add(new ShapelessOreRecipe(output, "ingotCopper")); // TODO: read from config
@@ -61,8 +64,10 @@ public class MiscConfiguration implements IFuelHandler {
 
     @Override
     public int getBurnTime(ItemStack fuel) {
+        System.out.println("getBurnTime "+fuel+" itemID="+fuel.itemID);
         if (!fuelTimes.containsKey(fuel.itemID)) return 0; // TODO: matching
 
+        System.out.println("returning "+fuelTimes.get(fuel.itemID));
         return fuelTimes.get(fuel.itemID);
     }
 
