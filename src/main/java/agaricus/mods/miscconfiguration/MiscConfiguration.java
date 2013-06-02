@@ -62,6 +62,17 @@ public class MiscConfiguration implements IFuelHandler {
                 }
             }
 
+            ConfigCategory shapelessCrafting = cfg.getCategory("RecipesShapelessCrafting");
+            for (Map.Entry<String, Property> entry : shapelessCrafting.entrySet()) {
+                String key = entry.getKey();
+                Property property = entry.getValue();
+
+                ConfigItemStackList inputs = new ConfigItemStackList(key);
+                ConfigItemStack output = new ConfigItemStack(property.getString());
+
+                recipes.add(new ShapelessOreRecipe(output.getItemStack(), inputs.getArray()));
+            }
+
         } catch (Exception e) {
             FMLLog.log(Level.SEVERE, e, "MiscConfiguration had a problem loading it's configuration");
         } finally {

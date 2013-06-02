@@ -66,6 +66,10 @@ public class ConfigItemStack {
         this.handle = itemStack;
     }
 
+    public ItemStack getItemStack() {
+        return this.handle;
+    }
+
     public boolean isValid() {
         return handle != null;
     }
