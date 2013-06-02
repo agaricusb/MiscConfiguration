@@ -55,9 +55,6 @@ public class ConfigItemStack {
 
         this.handle = new ItemStack(itemID, quantity, damage);
 
-        System.out.println("ConfigItemStack itemID="+itemID+", damage="+damage);
-
-
         // TODO
         //OreDictionary.getOres(name); // gets a list of all matching entries
         //GameRegistry.findItemStack(modId, name, 1); // need mod id
@@ -93,22 +90,16 @@ public class ConfigItemStack {
         //return this.handle.isItemEqual(((ConfigItemStack) rhs).handle); // just compares id and damage directly
         ConfigItemStack rhs = (ConfigItemStack) object;
 
-        System.out.println(" compare "+this.handle.itemID+":"+getDamage(this.handle)+" vs "+rhs.handle.itemID+":"+getDamage(this.handle));
-
         if (this.handle.itemID != rhs.handle.itemID) {
-            System.out.println(" fail handle");
             return false;
         }
         if (getDamage(this.handle) != OreDictionary.WILDCARD_VALUE && getDamage(rhs.handle) != OreDictionary.WILDCARD_VALUE) { // wildcard matches all damage values
             if (getDamage(this.handle) != getDamage(rhs.handle)) {
-                System.out.println(" fail damage: " + getDamage(this.handle) + " != " + getDamage((rhs.handle)));
                 return false;
             }
         }
 
         // TODO: NBT
-
-        System.out.println("true");
 
         return true;
     }
