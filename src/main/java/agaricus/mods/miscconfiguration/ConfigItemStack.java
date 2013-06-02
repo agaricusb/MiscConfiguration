@@ -1,10 +1,15 @@
 package agaricus.mods.miscconfiguration;
 
+import com.google.common.base.Splitter;
 import cpw.mods.fml.common.FMLLog;
+import cpw.mods.fml.common.ObfuscationReflectionHelper;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
+import net.minecraftforge.oredict.OreDictionary;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 
@@ -12,16 +17,47 @@ public class ConfigItemStack {
 
     //private Map<String, ItemStack> itemNames = new HashMap<String, ItemStack>();
 
-    private ItemStack handle;
+    private ItemStack handle = null;
 
     public ConfigItemStack(String name) {
-        try {
-            int itemID = Integer.parseInt(name, 10);
 
-            this.handle = new ItemStack(itemID, 1, 0); // TODO: optional damage value, ":"
+        Iterator<String> parts = Splitter.on(":").limit(2).split(name).iterator();
+        if (!parts.hasNext()) return;
+
+        String idString = parts.next();
+
+        // parse itemID or itemID:damage
+
+        int itemID;
+        int damage = OreDictionary.WILDCARD_VALUE;
+
+        try {
+            itemID = Integer.parseInt(idString, 10);
         } catch (NumberFormatException ex) {
             this.handle = null;
+            return;
         }
+
+        if (parts.hasNext()) {
+            String damageString = parts.next();
+            if (damageString.equals("*")) {
+                damage = OreDictionary.WILDCARD_VALUE;
+            } else {
+                try {
+                    damage = Integer.parseInt(damageString, 10);
+                } catch (NumberFormatException ex) {
+                    // keep as default WILDCARD_VALUE
+                }
+            }
+        }
+
+        int quantity = 1;
+
+        this.handle = new ItemStack(itemID, quantity, damage);
+
+        System.out.println("ConfigItemStack itemID="+itemID+", damage="+damage);
+
+
         // TODO
         //OreDictionary.getOres(name); // gets a list of all matching entries
         //GameRegistry.findItemStack(modId, name, 1); // need mod id
@@ -52,9 +88,41 @@ public class ConfigItemStack {
     }
 
     @Override
-    public boolean equals(Object rhs) {
-        if (rhs == null || !(rhs instanceof ConfigItemStack)) return false;
-        return this.handle.isItemEqual(((ConfigItemStack) rhs).handle);
+    public boolean equals(Object object) {
+        if (object == null || !(object instanceof ConfigItemStack)) return false;
+        //return this.handle.isItemEqual(((ConfigItemStack) rhs).handle); // just compares id and damage directly
+        ConfigItemStack rhs = (ConfigItemStack) object;
+
+        System.out.println(" compare "+this.handle.itemID+":"+getDamage(this.handle)+" vs "+rhs.handle.itemID+":"+getDamage(this.handle));
+
+        if (this.handle.itemID != rhs.handle.itemID) {
+            System.out.println(" fail handle");
+            return false;
+        }
+        if (getDamage(this.handle) != OreDictionary.WILDCARD_VALUE && getDamage(rhs.handle) != OreDictionary.WILDCARD_VALUE) { // wildcard matches all damage values
+            if (getDamage(this.handle) != getDamage(rhs.handle)) {
+                System.out.println(" fail damage: " + getDamage(this.handle) + " != " + getDamage((rhs.handle)));
+                return false;
+            }
+        }
+
+        // TODO: NBT
+
+        System.out.println("true");
+
+        return true;
+    }
+
+    // Workaround Forge (bug?) crashing in getItemDamage() if Item null (e.g., Mystcraft writing desk, Forgotten Nature leaves, RedPower flax)
+    // CraftGuide also does this:
+    // "Added CommonUtilities.getItemDamage(): Unlike ItemStack.getItemDamage, doesn't NPE if the stack's Item is null, instead using reflection as a fallback to read the field directly"
+    // https://github.com/Uristqwerty/CraftGuide/commit/d7fdcb02250c7ad56c5d29ed5b79fc357c33298b#L1R204
+    private static int getDamage(ItemStack itemStack) {
+        if (itemStack.getItem() != null) {
+            return itemStack.getItemDamage();
+        } else {
+            return ObfuscationReflectionHelper.getPrivateValue(ItemStack.class, itemStack, "itemDamage", "field_77991_e", "e");
+        }
     }
 
     // TODO
