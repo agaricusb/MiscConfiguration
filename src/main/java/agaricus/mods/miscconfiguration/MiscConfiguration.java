@@ -28,6 +28,7 @@ public class MiscConfiguration implements IFuelHandler {
 
     private Map<ConfigItemStack, Integer> fuelTimes = new HashMap<ConfigItemStack, Integer>();
     private List<IRecipe> recipes = new ArrayList<IRecipe>();
+    private Map<Integer, Integer> maxStackSizes = new HashMap<Integer, Integer>();
 
 
     @Mod.PreInit
@@ -37,14 +38,13 @@ public class MiscConfiguration implements IFuelHandler {
         try {
             cfg.load();
 
-            ConfigCategory fuels = cfg.getCategory("Fuel");
-            for (Map.Entry<String, Property> entry : fuels.entrySet()) {
+            for (Map.Entry<String, Property> entry : cfg.getCategory("Fuel").entrySet()) {
                 String key = entry.getKey();
                 Property property = entry.getValue();
 
                 ConfigItemStack cis = new ConfigItemStack(key);
                 if (!cis.isValid()) {
-                    FMLLog.log(Level.WARNING, "Ignoring unrecognized item name '"+key+"'");
+                    FMLLog.log(Level.WARNING, "MiscConfiguration ignoring unrecognized item name '"+key+"'");
                 } else {
                     fuelTimes.put(cis, property.getInt()); // TODO: match other (possibly vanilla) fuels with getItemBurnTime()
                     //fuelTimes.put(Block.cobblestone.blockID, TileEntityFurnace.getItemBurnTime(new ItemStack(Item.coal)));
@@ -62,8 +62,7 @@ public class MiscConfiguration implements IFuelHandler {
                 }
             }
 
-            ConfigCategory shapelessCrafting = cfg.getCategory("RecipesShapelessCrafting");
-            for (Map.Entry<String, Property> entry : shapelessCrafting.entrySet()) {
+            for (Map.Entry<String, Property> entry : cfg.getCategory("RecipesShapelessCrafting").entrySet()) {
                 String key = entry.getKey();
                 Property property = entry.getValue();
 
@@ -73,6 +72,18 @@ public class MiscConfiguration implements IFuelHandler {
                 recipes.add(new ShapelessOreRecipe(output.getItemStack(), inputs.getArray()));
             }
 
+            for (Map.Entry<String, Property> entry : cfg.getCategory("MaxStackSizes").entrySet()) {
+                String key = entry.getKey();
+                Property property = entry.getValue();
+
+                ConfigItemStack item = new ConfigItemStack(key);
+                if (!item.isValid()) {
+                    FMLLog.log(Level.WARNING, "MiscConfiguration ignoring unrecognized item name '"+key+"'");
+                    continue;
+                }
+
+                maxStackSizes.put(item.getItemStack().itemID, property.getInt());
+            }
         } catch (Exception e) {
             FMLLog.log(Level.SEVERE, e, "MiscConfiguration had a problem loading it's configuration");
         } finally {
@@ -91,6 +102,19 @@ public class MiscConfiguration implements IFuelHandler {
     public void postInit(FMLPostInitializationEvent event) {
         for (IRecipe recipe : recipes) {
             GameRegistry.addRecipe(recipe);
+        }
+
+        for (Map.Entry<Integer, Integer> entry : maxStackSizes.entrySet()) {
+            int itemID = entry.getKey();
+            int maxStackSize = entry.getValue();
+
+            Item item = Item.itemsList[itemID];
+            if (item == null) {
+                FMLLog.log(Level.WARNING, "MiscConfiguration ignoring non-existent item '"+itemID+"'");
+                continue;
+            }
+
+            item.setMaxStackSize(maxStackSize);
         }
     }
 
