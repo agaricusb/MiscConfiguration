@@ -12,7 +12,9 @@ import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.crafting.IRecipe;
 import net.minecraft.tileentity.TileEntityFurnace;
+import net.minecraftforge.common.ConfigCategory;
 import net.minecraftforge.common.Configuration;
+import net.minecraftforge.common.Property;
 import net.minecraftforge.oredict.OreDictionary;
 import net.minecraftforge.oredict.ShapedOreRecipe;
 import net.minecraftforge.oredict.ShapelessOreRecipe;
@@ -36,6 +38,31 @@ public class MiscConfiguration implements IFuelHandler {
         try {
             cfg.load();
 
+            ConfigCategory fuels = cfg.getCategory("Fuel");
+            for (Map.Entry<String, Property> entry : fuels.entrySet()) {
+                String key = entry.getKey();
+                Property property = entry.getValue();
+
+                ItemStack itemStack = itemStackByName(key);
+                if (itemStack == null) {
+                    FMLLog.log(Level.WARNING, "Ignoring unrecognized item name '"+key+"'");
+                } else {
+                    fuelTimes.put(itemStack.itemID, property.getInt()); // TODO: match other (possibly vanilla) fuels with getItemBurnTime()
+                    //fuelTimes.put(Block.cobblestone.blockID, TileEntityFurnace.getItemBurnTime(new ItemStack(Item.coal)));
+                    /* for comparison:
+            if (item instanceof ItemTool && ((ItemTool) item).getToolMaterialName().equals("WOOD")) return 200;
+            if (item instanceof ItemSword && ((ItemSword) item).getToolMaterialName().equals("WOOD")) return 200;
+            if (item instanceof ItemHoe && ((ItemHoe) item).getMaterialName().equals("WOOD")) return 200;
+            if (i == Item.stick.itemID) return 100;       // 1/2 item
+            if (i == Item.coal.itemID) return 1600;       // 8 items
+            if (i == Item.bucketLava.itemID) return 20000;
+            if (i == Block.sapling.blockID) return 100;
+            if (i == Item.blazeRod.itemID) return 2400;
+            return GameRegistry.getFuelValue(par0ItemStack);
+                     */
+                }
+            }
+
         } catch (Exception e) {
             FMLLog.log(Level.SEVERE, e, "MiscConfiguration had a problem loading it's configuration");
         } finally {
@@ -43,11 +70,6 @@ public class MiscConfiguration implements IFuelHandler {
         }
 
         GameRegistry.registerFuelHandler(this);
-
-        fuelTimes.put(Block.cobblestone.blockID, TileEntityFurnace.getItemBurnTime(new ItemStack(Item.coal)));
-        // TODO
-        //fuelTimes.put(2631,  // Herringbone Parquet Plank
-        //        GameRegistry.getFuelValue(new ItemStack(Item.coal.itemID, 1, 0)));
 
         //ItemStack output = new ItemStack(12345, 1, 0);
         //recipes.add(new ShapelessOreRecipe(output, "ingotCopper")); // TODO: read from config
@@ -64,10 +86,8 @@ public class MiscConfiguration implements IFuelHandler {
 
     @Override
     public int getBurnTime(ItemStack fuel) {
-        System.out.println("getBurnTime "+fuel+" itemID="+fuel.itemID);
         if (!fuelTimes.containsKey(fuel.itemID)) return 0; // TODO: matching
 
-        System.out.println("returning "+fuelTimes.get(fuel.itemID));
         return fuelTimes.get(fuel.itemID);
     }
 
@@ -94,10 +114,18 @@ public class MiscConfiguration implements IFuelHandler {
     }
 
     private ItemStack itemStackByName(String name) {
+        try {
+            int itemID = Integer.parseInt(name, 10);
+
+            return new ItemStack(itemID, 1, 0); // TODO: optional damage value, ":"
+        } catch (NumberFormatException ex) {
+            ;
+        }
+
+        return null;
+
         // TODO
         //OreDictionary.getOres(name); // gets a list of all matching entries
         //GameRegistry.findItemStack(modId, name, 1); // need mod id
-
-        return null;
     }
 }
