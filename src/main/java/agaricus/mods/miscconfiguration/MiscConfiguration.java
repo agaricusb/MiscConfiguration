@@ -26,10 +26,9 @@ import java.util.logging.Level;
 @NetworkMod(clientSideRequired = false, serverSideRequired = false)
 public class MiscConfiguration implements IFuelHandler {
 
-    private Map<Integer, Integer> fuelTimes = new HashMap<Integer, Integer>();
-    //private List<ItemStack, Integer> fuelTimes = new ArrayList<ItemStack, Integer>(); // TODO: metadata, NBT
+    private Map<ConfigItemStack, Integer> fuelTimes = new HashMap<ConfigItemStack, Integer>();
     private List<IRecipe> recipes = new ArrayList<IRecipe>();
-    private Map<String, ItemStack> itemNames = new HashMap<String, ItemStack>();
+
 
     @Mod.PreInit
     public void preInit(FMLPreInitializationEvent event) {
@@ -43,11 +42,11 @@ public class MiscConfiguration implements IFuelHandler {
                 String key = entry.getKey();
                 Property property = entry.getValue();
 
-                ItemStack itemStack = itemStackByName(key);
-                if (itemStack == null) {
+                ConfigItemStack cis = new ConfigItemStack(key);
+                if (!cis.isValid()) {
                     FMLLog.log(Level.WARNING, "Ignoring unrecognized item name '"+key+"'");
                 } else {
-                    fuelTimes.put(itemStack.itemID, property.getInt()); // TODO: match other (possibly vanilla) fuels with getItemBurnTime()
+                    fuelTimes.put(cis, property.getInt()); // TODO: match other (possibly vanilla) fuels with getItemBurnTime()
                     //fuelTimes.put(Block.cobblestone.blockID, TileEntityFurnace.getItemBurnTime(new ItemStack(Item.coal)));
                     /* for comparison:
             if (item instanceof ItemTool && ((ItemTool) item).getToolMaterialName().equals("WOOD")) return 200;
@@ -86,46 +85,10 @@ public class MiscConfiguration implements IFuelHandler {
 
     @Override
     public int getBurnTime(ItemStack fuel) {
-        if (!fuelTimes.containsKey(fuel.itemID)) return 0; // TODO: matching
+        ConfigItemStack cis = new ConfigItemStack(fuel);
 
-        return fuelTimes.get(fuel.itemID);
-    }
+        if (!fuelTimes.containsKey(cis)) return 0;
 
-    /**
-     * Scan item names for lookup
-     */
-    private void scanItemNames() {
-        // TODO: might have to run at first tick, if this is not late enough for all other mods to be loaded
-
-        FMLLog.log(Level.INFO, "Scanning items");
-        for (int id = 0; id < Item.itemsList.length; ++id) {
-            Item item = Item.itemsList[id];
-            if (item == null) continue;
-
-            int damage = 0; // TODO: scan damages?
-            ItemStack itemStack = new ItemStack(id, 1, damage);
-            try {
-                System.out.println("id "+id+" is "+itemStack.getItemName());
-            } catch (Throwable t) {
-                ;
-            }
-        }
-        // TODO: cache in itemNames
-    }
-
-    private ItemStack itemStackByName(String name) {
-        try {
-            int itemID = Integer.parseInt(name, 10);
-
-            return new ItemStack(itemID, 1, 0); // TODO: optional damage value, ":"
-        } catch (NumberFormatException ex) {
-            ;
-        }
-
-        return null;
-
-        // TODO
-        //OreDictionary.getOres(name); // gets a list of all matching entries
-        //GameRegistry.findItemStack(modId, name, 1); // need mod id
+        return fuelTimes.get(cis);
     }
 }
