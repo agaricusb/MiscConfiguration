@@ -6,7 +6,10 @@ import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.network.NetworkMod;
+import cpw.mods.fml.common.registry.GameData;
 import cpw.mods.fml.common.registry.GameRegistry;
+import cpw.mods.fml.common.registry.ItemData;
+import cpw.mods.fml.relauncher.ReflectionHelper;
 import net.minecraft.block.Block;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -30,6 +33,7 @@ public class MiscConfiguration implements IFuelHandler {
     private List<IRecipe> recipes = new ArrayList<IRecipe>();
     private Map<Integer, Integer> maxStackSizes = new HashMap<Integer, Integer>();
     private Map<Integer, Float> blastResistances = new HashMap<Integer, Float>();
+    private boolean dumpOreDict = false;
 
     @Mod.PreInit
     public void preInit(FMLPreInitializationEvent event) {
@@ -96,6 +100,10 @@ public class MiscConfiguration implements IFuelHandler {
                 }
 
                 blastResistances.put(item.getItemStack().itemID, (float) property.getDouble(0)); // TODO: configurable from item name (obsidian..)
+
+                if (cfg.get(Configuration.CATEGORY_GENERAL, "DumpOreDict", false).getBoolean(false)) {
+                    dumpOreDict = true;
+                }
             }
         } catch (Exception e) {
             FMLLog.log(Level.SEVERE, e, "MiscConfiguration had a problem loading it's configuration");
@@ -142,6 +150,10 @@ public class MiscConfiguration implements IFuelHandler {
 
             block.blockResistance = resistance;
         }
+
+        if (dumpOreDict) {
+            dumpOreDict();
+        }
     }
 
     @Override
@@ -151,5 +163,29 @@ public class MiscConfiguration implements IFuelHandler {
         if (!fuelTimes.containsKey(cis)) return 0;
 
         return fuelTimes.get(cis);
+    }
+
+    /**
+     * Dump ore dictionary
+     */
+    public static void dumpOreDict() {
+        Map<Integer, ItemData> idMap = ReflectionHelper.getPrivateValue(GameData.class, null, "idMap");
+
+        List<String> oreNames = Arrays.asList(OreDictionary.getOreNames());
+        Collections.sort(oreNames);
+
+        for (String oreName : oreNames) {
+            StringBuffer sb = new StringBuffer();
+
+            sb.append("ore: " + oreName + ": ");
+            ArrayList<ItemStack> oreItems = OreDictionary.getOres(oreName);
+            for (ItemStack oreItem : oreItems) {
+                ItemData itemData = idMap.get(oreItem.itemID);
+                String modID = itemData.getModId();
+
+                sb.append(oreItem.itemID + ":" + oreItem.getItemDamage() + "=" + modID + ", ");
+            }
+            System.out.println(sb);
+        }
     }
 }
